@@ -2,22 +2,68 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Emisor - WebRTC</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Transmitir — Chispa</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
-<body>
-  <nav><a href="/receptor">Ir al receptor →</a></nav>
-  <h1>Emisor (cámara y micrófono)</h1>
-  <video id="localVideo" autoplay muted playsinline></video>
-  <div class="controls">
-    <button id="startBtn">Iniciar transmisión</button>
-    <button id="stopBtn" disabled>Detener</button>
+<body data-page="studio">
+  <div class="app">
+    <header class="topbar" id="topbar"></header>
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+      <div class="watch">
+        <section>
+          <div class="player">
+            <span class="badge-live badge-on">EN VIVO</span>
+            <span class="badge-live badge-off">FUERA DE LÍNEA</span>
+            <span class="badge-viewers viewers"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/></svg> <span class="viewer-count">128</span></span>
+            <video id="localVideo" autoplay muted playsinline></video>
+            <div class="placeholder">
+              <div class="big"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div>
+              <h3>Tu estudio</h3>
+              <span>Aquí verás tu cámara antes de salir al aire</span>
+            </div>
+          </div>
+
+          <div class="stream-info">
+            <div class="stream-head">
+              <div class="titles">
+                <h1>Estudio de transmisión</h1>
+                <div class="by">Estás como <b>Estudio Chispa</b></div>
+              </div>
+              <div class="controls">
+                <button class="btn" id="startBtn">Salir al aire</button>
+                <button class="btn danger" id="stopBtn" disabled>Terminar</button>
+              </div>
+            </div>
+            <div class="card"><h3>Estado</h3><div id="status">Listo para salir al aire.</div></div>
+            <div class="card"><h3>Antes de empezar</h3>
+              <ol class="studio-steps">
+                <li>Permite el acceso a cámara y micrófono cuando el navegador lo pida.</li>
+                <li>Comparte el enlace de <a href="/receptor" style="color:var(--sun)">/receptor</a> con tu audiencia.</li>
+                <li>Solo una persona puede transmitir a la vez en la sala.</li>
+              </ol>
+            </div>
+          </div>
+        </section>
+
+        <aside class="chat" aria-label="Chat en vivo">
+          <div class="chat-head"><span>Chat de tu canal</span></div>
+          <div class="chat-log" id="chatLog" aria-live="polite"></div>
+          <form class="chat-form" id="chatForm">
+            <input id="chatInput" placeholder="Escribe un mensaje" maxlength="200" autocomplete="off" aria-label="Mensaje" />
+            <button class="btn sm" type="submit" aria-label="Enviar"><svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button>
+          </form>
+        </aside>
+      </div>
+    </main>
   </div>
-  <div id="status">Presiona "Iniciar transmisión" para comenzar.</div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script src="/firebase-config.js"></script>
+  <script src="/layout.js"></script>
+  <script src="/chat.js"></script>
   <script src="/emisor/emisor.js"></script>
 </body>
 </html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chispa</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body data-page="home">
+  <div class="app">
+    <header class="topbar" id="topbar"></header>
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+      <section class="hero">
+        <div>
+          <span class="badge-live">EN VIVO AHORA</span>
+          <h1 style="margin-top:.8rem">Cada chispa empieza una transmisión.</h1>
+          <p>Chispa es el rincón donde streamers de la comunidad comparten su cámara, su música y su talento. Entra, saluda en el chat y quédate un rato.</p>
+          <a class="btn" href="/receptor">Ver el directo</a>
+          <a class="btn ghost" href="/emisor" style="margin-left:.5rem">Quiero transmitir</a>
+        </div>
+        <a class="player" href="/receptor" aria-label="Entrar al directo de Estudio Chispa">
+          <span class="badge-live">EN VIVO</span>
+          <div class="placeholder"><div class="big"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></div><h3>Estudio Chispa</h3><span>Toca para entrar a la sala</span></div>
+        </a>
+      </section>
+
+      <div class="section-head"><h2>Explora por categoría</h2></div>
+      <div class="categories" id="categories" role="tablist"></div>
+
+      <div class="section-head"><h2 id="gridTitle">Canales en vivo</h2></div>
+      <div class="grid" id="grid"></div>
+    </main>
+  </div>
+  <script src="/layout.js"></script>
+  <script src="/home.js"></script>
+</body>
+</html>

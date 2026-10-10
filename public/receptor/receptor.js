@@ -1,77 +1,95 @@
-// Lado "receptor": se conecta a la sala de Firebase y reproduce el stream remoto del emisor.
 const remoteVideo = document.getElementById('remoteVideo');
 const connectBtn = document.getElementById('connectBtn');
 const disconnectBtn = document.getElementById('disconnectBtn');
 const statusEl = document.getElementById('status');
 
-let pc = null; // RTCPeerConnection activa
-let roomRef = null; // Referencia a Firebase para la señalización (rooms/main)
-let offerListenerRef = null; // Listener de la oferta (offer) publicada por el emisor
-let callerCandidatesRef = null; // Listener de los ICE candidates del emisor
+let pc = null;
+let base = null;
+let wantConnected = false;
+let session = 0;
+let pendingCandidates = [];
 
 function setStatus(text) {
   statusEl.textContent = text;
 }
 
-async function connect() {
-  connectBtn.disabled = true;
+async function join() {
+  const mySession = ++session;
+  const myPc = new RTCPeerConnection(RTC_CONFIG);
+  const myBase = db.ref(ROOM_PATH).child('viewers').child(db.ref().push().key);
+  pc = myPc;
+  base = myBase;
+  pendingCandidates = [];
+  let answered = false;
+
   setStatus('Buscando emisor activo...');
 
-  roomRef = db.ref(ROOM_PATH);
-
-  pc = new RTCPeerConnection(RTC_CONFIG);
-
-  // Al llegar el stream remoto, lo asigna al elemento de video.
-  pc.ontrack = (event) => {
+  myPc.ontrack = (event) => {
     remoteVideo.srcObject = event.streams[0];
     setStatus('Recibiendo transmisión.');
   };
 
-  pc.onconnectionstatechange = () => {
-    setStatus('Estado de conexión: ' + pc.connectionState);
+  myPc.onconnectionstatechange = () => {
+    if (mySession !== session) return;
+    setStatus('Estado de conexión: ' + myPc.connectionState);
+    if (myPc.connectionState === 'failed') rejoin();
   };
 
-  // Cada ICE candidate propio se publica en Firebase para que el emisor lo use.
-  const calleeCandidatesRef = roomRef.child('calleeCandidates');
-  pc.onicecandidate = (event) => {
+  myPc.onicecandidate = (event) => {
     if (event.candidate) {
-      calleeCandidatesRef.push(event.candidate.toJSON());
+      myBase.child('calleeCandidates').push(event.candidate.toJSON());
     }
   };
 
-  // Espera la oferta del emisor, genera la respuesta (answer) y la publica.
-  offerListenerRef = roomRef.child('offer');
-  offerListenerRef.on('value', async (snapshot) => {
+  myBase.child('offer').on('value', async (snapshot) => {
     const offer = snapshot.val();
-    if (offer && pc && !pc.currentRemoteDescription) {
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    if (!offer || answered || mySession !== session) return;
+    answered = true;
 
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      await roomRef.child('answer').set({ type: answer.type, sdp: answer.sdp });
+    await myPc.setRemoteDescription(new RTCSessionDescription(offer));
+    pendingCandidates.splice(0).forEach((c) => myPc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {}));
 
-      setStatus('Respuesta enviada. Conectando con el emisor...');
-    }
+    const answer = await myPc.createAnswer();
+    await myPc.setLocalDescription(answer);
+    await myBase.child('answer').set({ type: answer.type, sdp: answer.sdp });
+
+    setStatus('Respuesta enviada. Conectando con el emisor...');
   });
 
-  // Escucha los ICE candidates que publica el emisor y los agrega a la conexión.
-  callerCandidatesRef = roomRef.child('callerCandidates');
-  callerCandidatesRef.on('child_added', (snapshot) => {
+  myBase.child('callerCandidates').on('child_added', (snapshot) => {
     const candidate = snapshot.val();
-    if (candidate && pc) {
-      pc.addIceCandidate(new RTCIceCandidate(candidate));
+    if (!candidate || mySession !== session) return;
+    if (myPc.remoteDescription) {
+      myPc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+    } else {
+      pendingCandidates.push(candidate);
     }
   });
 
-  disconnectBtn.disabled = false;
+  await myBase.onDisconnect().remove();
+  if (mySession !== session) return;
+  await myBase.child('joinedAt').set(firebase.database.ServerValue.TIMESTAMP);
+  if (mySession !== session) {
+    myBase.remove();
+    return;
+  }
+
+  myBase.child('joinedAt').on('value', (snapshot) => {
+    if (!snapshot.exists() && mySession === session && wantConnected) rejoin();
+  });
 }
 
-function disconnect() {
-  disconnectBtn.disabled = true;
+function teardown() {
+  session++;
 
-  // Deja de escuchar cambios en Firebase antes de limpiar el estado.
-  if (offerListenerRef) offerListenerRef.off();
-  if (callerCandidatesRef) callerCandidatesRef.off();
+  if (base) {
+    base.child('offer').off();
+    base.child('callerCandidates').off();
+    base.child('joinedAt').off();
+    base.onDisconnect().cancel();
+    base.remove();
+    base = null;
+  }
 
   if (pc) {
     pc.close();
@@ -79,8 +97,29 @@ function disconnect() {
   }
 
   remoteVideo.srcObject = null;
-  roomRef = null;
+}
 
+function rejoin() {
+  teardown();
+  if (!wantConnected) return;
+  setStatus('Emisor no disponible. Esperando que transmita...');
+  const mySession = session;
+  setTimeout(() => {
+    if (wantConnected && mySession === session) join();
+  }, 1000);
+}
+
+function connect() {
+  connectBtn.disabled = true;
+  wantConnected = true;
+  join();
+  disconnectBtn.disabled = false;
+}
+
+function disconnect() {
+  disconnectBtn.disabled = true;
+  wantConnected = false;
+  teardown();
   setStatus('Desconectado.');
   connectBtn.disabled = false;
 }
