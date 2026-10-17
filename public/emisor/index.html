@@ -18,6 +18,7 @@
             <span class="badge-live badge-off">FUERA DE LÍNEA</span>
             <span class="badge-viewers viewers"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/></svg> <span class="viewer-count">128</span></span>
             <video id="localVideo" autoplay muted playsinline></video>
+            <canvas id="composeCanvas" width="1280" height="720"></canvas>
             <div class="placeholder">
               <div class="big"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div>
               <h3>Tu estudio</h3>
@@ -33,6 +34,7 @@
               </div>
               <div class="controls">
                 <button class="btn" id="startBtn">Salir al aire</button>
+                <button class="btn ghost" id="shareBtn" disabled>Compartir pantalla</button>
                 <button class="btn danger" id="stopBtn" disabled>Terminar</button>
               </div>
             </div>
@@ -64,6 +66,7 @@
   <script src="/firebase-config.js"></script>
   <script src="/layout.js"></script>
   <script src="/chat.js"></script>
+  <script src="/reactions.js"></script>
   <script src="/emisor/emisor.js"></script>
 </body>
 </html>
